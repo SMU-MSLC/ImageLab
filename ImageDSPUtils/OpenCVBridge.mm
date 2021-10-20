@@ -253,6 +253,35 @@ using namespace cv;
     }
 }
 
+-(bool)processFinger{
+    cv::Mat image_copy;
+    char text[50];
+    Scalar avgPixelIntensity;
+    
+    cvtColor(_image, image_copy, CV_BGRA2BGR); // get rid of alpha for processing
+//    cvtColor(image_copy, image_copy, CV_BGR2HSV);
+    avgPixelIntensity = cv::mean( image_copy );
+    sprintf(text,"Avg. B: %.0f, G: %.0f, R: %.0f", avgPixelIntensity.val[2],avgPixelIntensity.val[1],avgPixelIntensity.val[0]);
+    cv::putText(_image, text, cv::Point(50, 50), FONT_HERSHEY_PLAIN, 0.75, Scalar::all(255), 1, 2);
+    
+//    cvtColor(image_copy, image_copy, CV_HSV2BGR);
+//    cvtColor(image_copy, _image, CV_BGR2BGRA);
+    
+    // B : 10~40 G: 10~40 R: 75~115
+    // the range was observed by finger over the camera
+    
+    char text1[50];
+    sprintf(text1, "B: %.0f, G: %.0f, R: %.0f", fabs(avgPixelIntensity.val[2]-25.0), fabs(avgPixelIntensity.val[1]-25.0), fabs(avgPixelIntensity.val[2]-95.0));
+    cv::putText(_image, text1, cv::Point(70, 70), FONT_HERSHEY_PLAIN, 0.75, Scalar::all(255), 1, 2);
+    
+    if (fabs(avgPixelIntensity.val[2]-25.0) <=20.0 && fabs(avgPixelIntensity.val[1]-25.0) <= 20.0 && fabs(avgPixelIntensity.val[2]-95.0) <= 90.0) {
+        NSLog(@"Finger detected!");
+        return true;
+    }
+    return false;
+}
+
+
 
 #pragma mark ====Do Not Manipulate Code below this line!====
 -(void)setTransforms:(CGAffineTransform)trans{

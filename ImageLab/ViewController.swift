@@ -21,6 +21,17 @@ class ViewController: UIViewController   {
     //MARK: Outlets in view
     @IBOutlet weak var flashSlider: UISlider!
     @IBOutlet weak var stageLabel: UILabel!
+    @IBOutlet weak var toggleCameraButton: UIButton!
+    @IBOutlet weak var toggleFlashButton: UIButton!
+    
+    var buttonEnable:Bool = true{
+        willSet(newValue){
+            DispatchQueue.main.async {
+                self.toggleCameraButton.isEnabled = newValue
+                self.toggleFlashButton.isEnabled = newValue
+            }
+        }
+    }
     
     //MARK: ViewController Hierarchy
     override func viewDidLoad() {
@@ -29,36 +40,35 @@ class ViewController: UIViewController   {
         self.view.backgroundColor = nil
         
         // setup the OpenCV bridge nose detector, from file
-        self.bridge.loadHaarCascade(withFilename: "nose")
+//        self.bridge.loadHaarCascade(withFilename: "nose")
         
         self.videoManager = VideoAnalgesic(mainView: self.view)
-        self.videoManager.setCameraPosition(position: AVCaptureDevice.Position.front)
+        self.videoManager.setCameraPosition(position: AVCaptureDevice.Position.back)
         
         // create dictionary for face detection
         // HINT: you need to manipulate these properties for better face detection efficiency
-        let optsDetector = [CIDetectorAccuracy:CIDetectorAccuracyLow,CIDetectorTracking:true] as [String : Any]
+//        let optsDetector = [CIDetectorAccuracy:CIDetectorAccuracyLow,CIDetectorTracking:true] as [String : Any]
         
         // setup a face detector in swift
-        self.detector = CIDetector(ofType: CIDetectorTypeFace,
-                                  context: self.videoManager.getCIContext(), // perform on the GPU is possible
-            options: (optsDetector as [String : AnyObject]))
+//        self.detector = CIDetector(ofType: CIDetectorTypeFace,
+//                                  context: self.videoManager.getCIContext(), // perform on the GPU is possible
+//            options: (optsDetector as [String : AnyObject]))
         
         self.videoManager.setProcessingBlock(newProcessBlock: self.processImageSwift)
         
         if !videoManager.isRunning{
             videoManager.start()
         }
-    
     }
     
     //MARK: Process image output
     func processImageSwift(inputImage:CIImage) -> CIImage{
         
         // detect faces
-        let f = getFaces(img: inputImage)
+//        let f = getFaces(img: inputImage)
         
         // if no faces, just return original image
-        if f.count == 0 { return inputImage }
+//        if f.count == 0 { return inputImage }
         
         var retImage = inputImage
         
@@ -80,24 +90,27 @@ class ViewController: UIViewController   {
         // or any bounds to only process a certain bounding region in OpenCV
         self.bridge.setTransforms(self.videoManager.transform)
         self.bridge.setImage(retImage,
-                             withBounds: f[0].bounds, // the first face bounds
+                             withBounds: retImage.extent, // the first face bounds
                              andContext: self.videoManager.getCIContext())
         
-        self.bridge.processImage()
-        retImage = self.bridge.getImageComposite() // get back opencv processed part of the image (overlayed on original)
+//        self.bridge.processImage()
+        let isFinger = self.bridge.processFinger()
+        self.buttonEnable = !isFinger
+        
+        retImage = self.bridge.getImage() // get back opencv processed part of the image (overlayed on original)
         
         return retImage
     }
     
     //MARK: Setup Face Detection
     
-    func getFaces(img:CIImage) -> [CIFaceFeature]{
-        // this ungodly mess makes sure the image is the correct orientation
-        let optsFace = [CIDetectorImageOrientation:self.videoManager.ciOrientation]
-        // get Face Features
-        return self.detector.features(in: img, options: optsFace) as! [CIFaceFeature]
-        
-    }
+//    func getFaces(img:CIImage) -> [CIFaceFeature]{
+//        // this ungodly mess makes sure the image is the correct orientation
+//        let optsFace = [CIDetectorImageOrientation:self.videoManager.ciOrientation]
+//        // get Face Features
+//        return self.detector.features(in: img, options: optsFace) as! [CIFaceFeature]
+//
+//    }
     
     
     // change the type of processing done in OpenCV

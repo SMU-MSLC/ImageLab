@@ -31,6 +31,9 @@
 // call this to perfrom processing (user controlled for better transparency)
 -(void)processImage;
 
+// call this to perform processing vision regarding finger
+-(bool)processFinger;
+
 // for the video manager transformations
 -(void)setTransforms:(CGAffineTransform)trans;
 
