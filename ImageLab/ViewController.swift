@@ -30,6 +30,28 @@ class ViewController: UIViewController   {
                 self.toggleCameraButton.isEnabled = newValue
                 self.toggleFlashButton.isEnabled = newValue
             }
+            guard buttonEnable != newValue else {
+                return
+            }
+            if !newValue {
+                print("will set finger detected in!")
+                
+//                _ = self.videoManager.toggleFlash(flashSwitch: !newValue)
+            } else {
+                print("will set finger detected out!")
+//                _ = self.videoManager.toggleFlash(flashSwitch: !newValue)
+            }
+            
+//            _ = self.videoManager.toggleFlash(flashSwitch: true)
+        }
+    }
+    
+    var isFingerDetected = false{
+        willSet(newValue){
+            guard isFingerDetected != newValue else {
+                return
+            }
+            _ = self.videoManager.toggleFlash(flashSwitch: newValue)
         }
     }
     
@@ -53,6 +75,8 @@ class ViewController: UIViewController   {
 //        self.detector = CIDetector(ofType: CIDetectorTypeFace,
 //                                  context: self.videoManager.getCIContext(), // perform on the GPU is possible
 //            options: (optsDetector as [String : AnyObject]))
+        
+//        _ = self.videoManager.toggleFlash(flashSwitch: true)
         
         self.videoManager.setProcessingBlock(newProcessBlock: self.processImageSwift)
         
@@ -94,8 +118,17 @@ class ViewController: UIViewController   {
                              andContext: self.videoManager.getCIContext())
         
 //        self.bridge.processImage()
+        
+        let start = CFAbsoluteTimeGetCurrent()
+        // run your work
         let isFinger = self.bridge.processFinger()
+        let diff = CFAbsoluteTimeGetCurrent() - start
+        print("Took \(diff) seconds")
+        
+//        let isFinger = self.bridge.processFinger()
         self.buttonEnable = !isFinger
+        
+        self.isFingerDetected = self.bridge.fingerNowFlag
         
         retImage = self.bridge.getImage() // get back opencv processed part of the image (overlayed on original)
         
@@ -111,7 +144,6 @@ class ViewController: UIViewController   {
 //        return self.detector.features(in: img, options: optsFace) as! [CIFaceFeature]
 //
 //    }
-    
     
     // change the type of processing done in OpenCV
     @IBAction func swipeRecognized(_ sender: UISwipeGestureRecognizer) {

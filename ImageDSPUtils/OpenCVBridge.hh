@@ -15,7 +15,7 @@
 @interface OpenCVBridge : NSObject
 
 @property (nonatomic) NSInteger processType;
-
+@property (nonatomic) BOOL fingerNowFlag;
 
 // set the image for processing later
 -(void) setImage:(CIImage*)ciFrameImage

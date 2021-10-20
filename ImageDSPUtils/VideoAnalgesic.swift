@@ -296,6 +296,39 @@ class VideoAnalgesic: NSObject, AVCaptureVideoDataOutputSampleBufferDelegate, AV
         return isOverHeating
     }
     
+    func toggleFlash(flashSwitch:Bool)->(Bool){
+        var isOverHeating = false
+        guard let device = self.videoDevice else {
+            return isOverHeating
+        }
+        guard device.hasTorch && self.devicePosition == AVCaptureDevice.Position.back else {
+            return isOverHeating
+        }
+        print("will set \(device.torchMode)")
+        print("will set \(flashSwitch)")
+        print("will set \(device.torchLevel)")
+        guard (device.torchLevel > 0.0 && !flashSwitch) || (device.torchLevel == 0.0 && flashSwitch)  else {
+            return isOverHeating
+        }
+        
+        do {
+            try device.lockForConfiguration()
+        } catch _ {
+        }
+        if flashSwitch {
+            do {
+                try device.setTorchModeOn(level: 1.0)
+                isOverHeating = false
+            } catch _ {
+                isOverHeating = true
+            }
+        } else {
+            device.torchMode = AVCaptureDevice.TorchMode.off
+        }
+        device.unlockForConfiguration()
+        return isOverHeating
+    }
+    
     func setFPS(desiredFrameRate:Double){
         if let device = self.videoDevice{
             do {

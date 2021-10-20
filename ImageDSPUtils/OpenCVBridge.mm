@@ -8,6 +8,7 @@
 
 #import "OpenCVBridge.hh"
 
+#define fingerCapturedFrameThreshold 30  //if the frame captured consistently for 30 frames, then I make sure that the finger is detected
 
 using namespace cv;
 
@@ -18,10 +19,16 @@ using namespace cv;
 @property (nonatomic) CGAffineTransform transform;
 @property (nonatomic) CGAffineTransform inverseTransform;
 @property (atomic) cv::CascadeClassifier classifier;
+@property (nonatomic) double* avgRedArray;
+@property (nonatomic) double* avgGreenArray;
+@property (nonatomic) double* avgBlueArray;
+@property (atomic) NSInteger fingerDetectedCounter;
+@property (atomic) NSInteger nonFingerDetectedCounter;
+@property (nonatomic) BOOL fingerLastFlag;
 @end
 
 @implementation OpenCVBridge
-
+@synthesize fingerNowFlag;
 
 
 #pragma mark ===Write Your Code Here===
@@ -270,14 +277,68 @@ using namespace cv;
     // B : 10~40 G: 10~40 R: 75~115
     // the range was observed by finger over the camera
     
-    char text1[50];
-    sprintf(text1, "B: %.0f, G: %.0f, R: %.0f", fabs(avgPixelIntensity.val[2]-25.0), fabs(avgPixelIntensity.val[1]-25.0), fabs(avgPixelIntensity.val[2]-95.0));
-    cv::putText(_image, text1, cv::Point(70, 70), FONT_HERSHEY_PLAIN, 0.75, Scalar::all(255), 1, 2);
+//    char text1[50];
+//    sprintf(text1, "B: %.0f, G: %.0f, R: %.0f", fabs(avgPixelIntensity.val[2]-25.0), fabs(avgPixelIntensity.val[1]-25.0), fabs(avgPixelIntensity.val[2]-95.0));
+//    cv::putText(_image, text1, cv::Point(60, 60), FONT_HERSHEY_PLAIN, 0.75, Scalar::all(255), 1, 2);
     
-    if (fabs(avgPixelIntensity.val[2]-25.0) <=20.0 && fabs(avgPixelIntensity.val[1]-25.0) <= 20.0 && fabs(avgPixelIntensity.val[2]-95.0) <= 90.0) {
+    char textHSV[50];
+    cvtColor(image_copy, image_copy, CV_BGR2HSV);
+    Scalar avgIntensityHSV;
+    avgIntensityHSV = cv::mean( image_copy );
+    sprintf(textHSV, "H: %.0f, S: %.0f, V: %.0f",avgIntensityHSV.val[0],avgIntensityHSV.val[1],avgIntensityHSV.val[2]);
+    cv::putText(_image, textHSV,cv::Point(70, 70), FONT_HERSHEY_PLAIN, 0.75, Scalar::all(255), 1, 2);
+    
+    // 121 253 108
+    
+    // I tried many times and decided to use HSV color because it could provide more consistent result rather than BGR
+    // 
+    if (fabs(avgIntensityHSV.val[0] - 120) <= 5.0 && fabs(avgIntensityHSV.val[1] - 253) <= 5.0) {
         NSLog(@"Finger detected!");
+        
+        self.nonFingerDetectedCounter = 0; // reset non-finger detected counter because the finger is captured
+        
+        if (self.fingerLastFlag) {// consistently capturing the finger
+            self.fingerDetectedCounter += 1;
+        }else {
+            self.fingerDetectedCounter = 1;
+        }
+        
+        if (self.fingerDetectedCounter >= fingerCapturedFrameThreshold) {
+            self.fingerNowFlag = true; // if consistent 30 frames are fingers then set true
+        }
+        
+//        When a finger is over the camera, save the average red, average green, and average blue values into three
+//        separate float arrays of length 100 points. That is, each element in the arrays will be the average color of a new camera
+//        frame.
+        if (self.fingerDetectedCounter < 100) {
+            self.avgRedArray[self.fingerDetectedCounter] = avgPixelIntensity.val[0];
+            self.avgGreenArray[self.fingerDetectedCounter] = avgPixelIntensity.val[1];
+            self.avgBlueArray[self.fingerDetectedCounter] = avgPixelIntensity.val[2];
+        } else {
+            char text100[50] = "got 100 frames!";
+            cv::putText(_image, text100,cv::Point(90, 90), FONT_HERSHEY_PLAIN, 0.75, Scalar::all(255), 1, 2);
+        }
+        
+        self.fingerLastFlag = true;
         return true;
+    } else {
+        
+        if (!self.fingerLastFlag) {// consistently capturing the non-finger
+            self.nonFingerDetectedCounter += 1;
+        }
+        
+        if (self.nonFingerDetectedCounter >= fingerCapturedFrameThreshold) {// consistently capturing non-finger for 30 frames
+            self.fingerNowFlag = false;
+        }
+        
+
+        self.fingerLastFlag = false;
     }
+    
+//    if (fabs(avgPixelIntensity.val[2]-25.0) <=25.0 && fabs(avgPixelIntensity.val[1]-25.0) <= 25.0 && fabs(avgPixelIntensity.val[2]-95.0) <= 95.0) {
+//        NSLog(@"Finger detected!");
+//        return true;
+//    }
     return false;
 }
 
@@ -304,6 +365,15 @@ using namespace cv;
         self.inverseTransform = CGAffineTransformMakeScale(-1.0,1.0);
         self.inverseTransform = CGAffineTransformRotate(self.inverseTransform, -M_PI_2);
         
+        self.fingerDetectedCounter = 0;
+        self.nonFingerDetectedCounter = 0;
+        
+        self.avgRedArray = (double*)calloc(100, sizeof(double));
+        self.avgGreenArray = (double*)calloc(100, sizeof(double));
+        self.avgBlueArray = (double*)calloc(100, sizeof(double));
+        
+        self.fingerLastFlag = false;
+        self.fingerNowFlag = false;
         
     }
     return self;
