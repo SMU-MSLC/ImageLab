@@ -8,7 +8,7 @@
 
 #import "OpenCVBridge.hh"
 
-#define fingerCapturedFrameThreshold 30  //if the frame captured consistently for 30 frames, then I make sure that the finger is detected
+#define fingerCapturedFrameThreshold 30  //To make sure that the finger is detected, 30 frames of consistent finger detected is needed.
 
 using namespace cv;
 
