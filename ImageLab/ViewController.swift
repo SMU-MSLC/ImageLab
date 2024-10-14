@@ -86,6 +86,7 @@ class ViewController: UIViewController, UIImagePickerControllerDelegate, UINavig
             // and would need to map CI and UI team's code to fix, ugh
             beginImage = applyFilters(inputImage: beginImage)
             
+            // update, they fixed the orientation!!!! this now works!!!
             let newImage   = UIImage(ciImage: beginImage,
                                        scale: CGFloat(1.0),
                                      orientation: image.imageOrientation)
@@ -94,7 +95,7 @@ class ViewController: UIViewController, UIImagePickerControllerDelegate, UINavig
             DispatchQueue.main.async{
                 self.imageView.image = newImage
                 // band-aid solution... just rotate the view
-                self.imageView.transform = CGAffineTransform.init(rotationAngle: CGFloat(Double.pi/2))
+                //self.imageView.transform = CGAffineTransform.init(rotationAngle: CGFloat(Double.pi/2))
             }
         }
         
