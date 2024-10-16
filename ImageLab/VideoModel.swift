@@ -38,11 +38,6 @@ class VideoModel: NSObject {
     private func setupFilters(view:MTKView){
         filters = []
         
-        // add bloom filter with new radius
-        let filterBloom = CIFilter(name: "CIBloom")!
-        filterBloom.setValue(0.5, forKey: kCIInputIntensityKey)
-        filterBloom.setValue(20, forKey: "inputRadius")
-        //filters.append(filterBloom)
         
         // add pinch filter
         let filterPinch = CIFilter(name:"CIBumpDistortion")!
